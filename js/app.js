@@ -1,10 +1,11 @@
 // Main Application Controller
 class App {
     constructor() {
+        // CORREÇÃO: A sidebar agora começa expandida no desktop por padrão.
         this.currentModule = 'dashboard';
         this.isAuthenticated = false;
         this.isMobile = window.innerWidth <= 768;
-        this.sidebarCollapsed = this.isMobile;
+        this.sidebarCollapsed = false; // Inicia como 'false' (expandida)
         
         this.init();
     }
@@ -73,14 +74,6 @@ class App {
         window.addEventListener('resize', Utils.debounce(() => {
             this.handleResize();
         }, 250));
-
-        // Before unload warning for unsaved changes
-        window.addEventListener('beforeunload', (e) => {
-            if (this.hasUnsavedChanges()) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        });
     }
 
     // Setup responsive behavior
@@ -104,13 +97,12 @@ class App {
         const sidebar = document.getElementById('sidebar');
         
         if (this.isMobile) {
-            this.sidebarCollapsed = true;
-            mainApp.classList.add('sidebar-collapsed');
-            sidebar.classList.remove('open');
-        } else {
-            this.sidebarCollapsed = false;
+            // No celular, a sidebar está sempre "recolhida" (fora da tela) e é controlada pela classe 'open'
             mainApp.classList.remove('sidebar-collapsed');
             sidebar.classList.remove('open');
+        } else {
+            // No desktop, controla o estado 'collapsed'
+            mainApp.classList.toggle('sidebar-collapsed', this.sidebarCollapsed);
         }
     }
 
@@ -151,11 +143,11 @@ class App {
             settings: new Settings()
         };
 
-        // CORREÇÃO: Itera sobre os módulos, inicializa e os torna globais para que os botões 'onclick' funcionem.
+        // CORREÇÃO: Torna cada instância do módulo global para que os botões onclick() funcionem.
         for (const moduleName in this.modules) {
             const moduleInstance = this.modules[moduleName];
             
-            // Torna a instância do módulo global (ex: window.clients = new Clients())
+            // Ex: window.clients = new Clients()
             window[moduleName] = moduleInstance;
             
             if (moduleInstance.init) {
@@ -168,41 +160,31 @@ class App {
     showModule(moduleName) {
         if (!this.isAuthenticated) return;
 
-        // Hide all modules
         document.querySelectorAll('.module').forEach(module => {
             module.classList.remove('active');
         });
-
-        // Show target module
         const targetModule = document.getElementById(`${moduleName}-module`);
         if (targetModule) {
             targetModule.classList.add('active');
         }
 
-        // Update navigation
         document.querySelectorAll('.nav-item').forEach(item => {
             item.classList.remove('active');
         });
-
         const activeNavItem = document.querySelector(`[data-module="${moduleName}"]`);
         if (activeNavItem) {
             activeNavItem.classList.add('active');
         }
 
-        // Update current module
         this.currentModule = moduleName;
 
-        // Refresh module data
-        if (this.modules && this.modules[moduleName] && this.modules[moduleName].refresh) {
+        if (this.modules[moduleName]?.refresh) {
             this.modules[moduleName].refresh();
         }
 
-        // Close sidebar on mobile after navigation
         if (this.isMobile) {
             this.closeSidebar();
         }
-
-        // Update page title
         this.updatePageTitle(moduleName);
     }
 
@@ -219,7 +201,6 @@ class App {
             reports: 'Relatórios',
             settings: 'Configurações'
         };
-        
         const title = titles[moduleName] || 'Sistema';
         document.title = `${title} - Flor de Maria SGI`;
     }
@@ -252,7 +233,6 @@ class App {
         modalContent.innerHTML = content;
         modalOverlay.classList.remove('hidden');
         
-        // Focus management
         const firstFocusable = modalContent.querySelector('button, input, select, textarea, [tabindex]');
         if (firstFocusable) {
             firstFocusable.focus();
@@ -265,34 +245,16 @@ class App {
         modalOverlay.classList.add('hidden');
     }
 
-    // Show loading state
-    showLoading(message = 'Carregando...') {
-        return Notifications.showLoading(message);
-    }
-
-    // Hide loading state
-    hideLoading(id) {
-        Notifications.hideLoading(id);
-    }
+    // Show/Hide loading state
+    showLoading(message = 'Carregando...') { return Notifications.showLoading(message); }
+    hideLoading(id) { Notifications.hideLoading(id); }
 
     // Logout user
     logout() {
         Auth.logout();
         this.isAuthenticated = false;
-        this.currentModule = 'dashboard';
         this.updateUI();
         Notifications.info('Você foi desconectado com sucesso.');
-    }
-
-    // Check for unsaved changes
-    hasUnsavedChanges() {
-        // Check each module for unsaved changes
-        if (this.modules) {
-            return Object.values(this.modules).some(module => 
-                module.hasUnsavedChanges && module.hasUnsavedChanges()
-            );
-        }
-        return false;
     }
 
     // Handle authentication success
@@ -302,141 +264,15 @@ class App {
         this.initializeModules();
         this.showModule('dashboard');
         
-        // Welcome message
         setTimeout(() => {
             Notifications.success('Bem-vinda ao Sistema de Gestão Integrado!', {
                 title: 'Login realizado com sucesso'
             });
         }, 500);
     }
-
-    // Handle authentication failure
-    onAuthenticationFailure(message) {
-        Notifications.error(message || 'Erro ao fazer login. Verifique suas credenciais.');
-    }
-
-    // Refresh current module
-    refreshCurrentModule() {
-        if (this.modules && this.modules[this.currentModule]) {
-            const module = this.modules[this.currentModule];
-            if (module.refresh) {
-                module.refresh();
-            }
-        }
-    }
-
-    // Get current module instance
-    getCurrentModule() {
-        return this.modules ? this.modules[this.currentModule] : null;
-    }
-
-    // Handle global search
-    handleGlobalSearch(query) {
-        const currentModule = this.getCurrentModule();
-        if (currentModule && currentModule.search) {
-            currentModule.search(query);
-        }
-    }
-
-    // Handle global shortcuts
-    handleShortcuts(e) {
-        // Ctrl/Cmd + K for global search
-        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-            e.preventDefault();
-            this.showGlobalSearch();
-        }
-        
-        // Ctrl/Cmd + N for new item in current module
-        if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-            e.preventDefault();
-            const currentModule = this.getCurrentModule();
-            if (currentModule && currentModule.createNew) {
-                currentModule.createNew();
-            }
-        }
-    }
-
-    // Show global search
-    showGlobalSearch() {
-        // Implementation for global search modal
-        const content = `
-            <div class="modal-header">
-                <h3>Busca Global</h3>
-                <button class="modal-close" onclick="app.closeModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <input type="text" id="global-search-input" class="form-control" 
-                           placeholder="Digite para buscar...">
-                </div>
-                <div id="global-search-results" class="search-results">
-                    <p class="text-muted">Digite algo para buscar</p>
-                </div>
-            </div>
-        `;
-        this.showModal(content);
-        
-        // Focus search input
-        setTimeout(() => {
-            document.getElementById('global-search-input').focus();
-        }, 100);
-    }
-
-    // Initialize theme
-    initTheme() {
-        // Apply saved theme or default
-        const savedTheme = localStorage.getItem('flordemaria_theme') || 'dark';
-        document.body.setAttribute('data-theme', savedTheme);
-    }
-
-    // Toggle theme
-    toggleTheme() {
-        const currentTheme = document.body.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        document.body.setAttribute('data-theme', newTheme);
-        localStorage.setItem('flordemaria_theme', newTheme);
-    }
-
-    // Handle offline/online status
-    handleConnectionStatus() {
-        window.addEventListener('online', () => {
-            Notifications.success('Conexão restaurada', {
-                title: 'Online'
-            });
-        });
-
-        window.addEventListener('offline', () => {
-            Notifications.warning('Você está offline. Os dados serão salvos localmente.', {
-                title: 'Offline'
-            });
-        });
-    }
 }
 
 // Initialize application when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new App();
-    
-    // Add keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
-        window.app.handleShortcuts(e);
-    });
 });
-
-// Service Worker registration for PWA capabilities
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
-                console.log('SW registered: ', registration);
-            })
-            .catch(registrationError => {
-                console.log('SW registration failed: ', registrationError);
-            });
-    });
-}
-
-// Export app instance
-window.App = App;
