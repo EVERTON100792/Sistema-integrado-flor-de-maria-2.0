@@ -737,4 +737,3 @@ document.head.appendChild(clientsStyles);
 
 // Initialize and export
 window.Clients = Clients;
-
