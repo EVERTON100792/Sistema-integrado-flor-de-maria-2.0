@@ -1,0 +1,147 @@
+Criar um Sistema de Gestão Integrado (SGI) completo e autônomo para uma pequena loja de varejo chamada "Flor de Maria". O sistema deve ser uma aplicação totalmente front-end, rodando exclusivamente no navegador, sem a necessidade de um servidor ou banco de dados externo. Todos os dados (vendas, clientes, estoque, etc.) devem ser salvos localmente no navegador do usuário usando localStorage.
+
+Tecnologias Obrigatórias:
+
+HTML5 para a estrutura.
+
+CSS3 para a estilização.
+
+JavaScript (Vanilla) para toda a lógica, sem o uso de frameworks (como React, Angular ou Vue).
+
+Chart.js para a criação de gráficos no dashboard.
+
+Font Awesome para os ícones.
+
+Design e Interface (UI/UX):
+
+Tema: "Black & Gold". Um design sofisticado e moderno com fundo preto (#000000), superfícies quase pretas (#111111), e o dourado (#E6B800) como cor primária e de destaque. O texto principal deve ser em um tom de branco-creme para conforto visual.
+
+Responsividade: O sistema deve ser totalmente responsivo, adaptando-se perfeitamente a desktops e dispositivos móveis (celulares). Em telas menores, a barra de navegação lateral deve ser recolhível (menu "hambúrguer"). As tabelas de dados também precisam se adaptar, transformando-se em um formato de lista vertical para melhor visualização.
+
+Navegação: Uma barra lateral fixa (em desktops) com links claros para cada módulo do sistema. A página ativa deve ser destacada.
+
+Feedback ao Usuário: Implementar notificações flutuantes no canto da tela para confirmar ações (ex: "Cliente salvo com sucesso!") ou alertar sobre erros. Modais devem ser usados para exibir recibos e históricos detalhados.
+
+Estrutura de Módulos e Funcionalidades:
+
+O sistema deve ser dividido nos seguintes módulos:
+
+1. Tela de Login:
+
+Uma tela de login simples. As credenciais podem ser fixas no código por enquanto (ex: usuário: maria, senha: flor123).
+
+2. Dashboard (Painel Principal):
+
+Visão geral do negócio com cards de resumo: Saldo em Caixa, Total a Receber e Total de Despesas do Mês.
+
+Um gráfico de barras (usando Chart.js) mostrando o total de vendas por método de pagamento.
+
+Uma seção de alertas para contas a receber vencidas.
+
+3. Clientes:
+
+Formulário para cadastrar novos clientes (nome, telefone).
+
+Tabela para listar todos os clientes cadastrados.
+
+Ações por cliente: Editar, Excluir e visualizar um Histórico de Compras em um modal.
+
+4. Estoque:
+
+Formulário para cadastrar novos produtos (código de referência, nome, quantidade, preço de custo e preço de venda).
+
+Tabela para listar todos os produtos, indicando visualmente quando um item está esgotado.
+
+Ações por produto: Editar e Excluir.
+
+5. Vendas (Ponto de Venda - PDV):
+
+Interface para registrar uma nova venda.
+
+Deve permitir buscar e selecionar um cliente.
+
+Deve permitir buscar e adicionar produtos do estoque ao "carrinho".
+
+O usuário deve poder definir a quantidade de cada item.
+
+Cálculo automático do total da venda.
+
+Seleção do método de pagamento: À Vista, Pix, Crediário ou Cartão de Crédito.
+
+Para Crediário e Cartão, permitir a seleção do número de parcelas.
+
+Ao finalizar, o sistema deve:
+
+Deduzir os itens vendidos do estoque.
+
+Lançar o valor no Fluxo de Caixa (se for à vista/pix).
+
+Gerar as parcelas em "Contas a Receber" (se for crediário/cartão).
+
+Gerar um recibo detalhado em um modal, com opção de imprimir e um link para enviar via WhatsApp com uma mensagem pré-formatada.
+
+6. Fluxo de Caixa:
+
+Exibição do saldo atual.
+
+Formulário para lançamentos manuais de entradas e saídas.
+
+Histórico de todas as movimentações financeiras (vendas, pagamentos de contas, despesas, etc.), com identificação de entradas e saídas por cor.
+
+Ações para editar e excluir lançamentos manuais.
+
+7. Despesas:
+
+Formulário para registrar despesas (descrição, valor, data).
+
+Tabela para listar todas as despesas.
+
+Ações para editar e excluir despesas. Ao excluir, o lançamento correspondente no caixa também deve ser removido.
+
+8. Contas a Receber:
+
+Tabela listando todas as parcelas de vendas a prazo.
+
+Deve exibir cliente, valor, data de vencimento e status (Pendente/Pago).
+
+Um botão para "Marcar como Pago", que automaticamente lança a entrada no Fluxo de Caixa.
+
+Ações para editar e excluir contas.
+
+9. Relatórios:
+
+Uma seção com abas para diferentes tipos de relatórios.
+
+Cada relatório deve ter filtros (geralmente por período).
+
+Todos os relatórios devem ter botões para Imprimir e Exportar para CSV.
+
+Tipos de Relatórios:
+
+Relatório de Vendas: Filtrado por data, listando todas as vendas e o faturamento total.
+
+Relatório de Contas a Receber: Filtrado por cliente, status e data de vencimento.
+
+Relatório de Lucratividade: Filtrado por data, calculando o lucro bruto (venda - custo do produto).
+
+Relatório de Produtos Mais Vendidos: Filtrado por data.
+
+Relatório de Estoque: Com opção de filtrar por produtos disponíveis ou esgotados.
+
+Relatório de Fluxo de Caixa: Detalhamento de entradas e saídas por período.
+
+10. Configurações:
+
+Backup e Restauração:
+
+Botão para "Fazer Backup", que baixa um arquivo .json com todos os dados do localStorage.
+
+Botão para "Restaurar", que permite ao usuário selecionar um arquivo de backup .json e sobrescrever os dados atuais (com uma mensagem de confirmação clara sobre o risco).
+
+Considerações Finais:
+
+O código deve ser limpo, bem-organizado e comentado para facilitar a manutenção.
+
+Utilizar funções para formatar valores monetários (R$) e datas (dd/mm/aaaa) no padrão brasileiro.
+
+A aplicação deve ser robusta, garantindo a integridade dos dados salvos no localStorage.

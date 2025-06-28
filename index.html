@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flor de Maria - Sistema de Gestão Integrado</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/login.css">
+    <link rel="stylesheet" href="styles/components.css">
+</head>
+<body>
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-container">
+        <div class="login-background">
+            <div class="floating-shapes">
+                <div class="shape shape-1"></div>
+                <div class="shape shape-2"></div>
+                <div class="shape shape-3"></div>
+                <div class="shape shape-4"></div>
+            </div>
+        </div>
+        
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo">
+                    <i class="fas fa-store"></i>
+                </div>
+                <h1>Flor de Maria</h1>
+                <p>Sistema de Gestão Integrado</p>
+            </div>
+            
+            <form id="login-form" class="login-form">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="username" placeholder="Usuário" required>
+                </div>
+                
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" placeholder="Senha" required>
+                </div>
+                
+                <button type="submit" class="login-btn">
+                    <span>Entrar</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                
+                <div class="login-footer">
+                    <p>Desenvolvido com ❤️ para pequenos negócios</p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="main-app" class="main-app hidden">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="logo">
+                    <i class="fas fa-store"></i>
+                    <span>Flor de Maria</span>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="user-info">
+                    <span>Bem-vinda, Maria!</span>
+                    <button id="logout-btn" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sidebar -->
+        <nav id="sidebar" class="sidebar">
+            <ul class="nav-menu">
+                <li class="nav-item active" data-module="dashboard">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-module="clients">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span>Clientes</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-module="inventory">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-boxes"></i>
+                        <span>Estoque</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-module="sales">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cash-register"></i>
+                        <span>Vendas (PDV)</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-module="cashflow">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Fluxo de Caixa</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-module="expenses">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-receipt"></i>
+                        <span>Despesas</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-module="receivables">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Contas a Receber</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-module="reports">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Relatórios</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-module="settings">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Configurações</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Module -->
+            <div id="dashboard-module" class="module active">
+                <div class="module-header">
+                    <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
+                </div>
+                
+                <div class="dashboard-cards">
+                    <div class="card summary-card">
+                        <div class="card-icon">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Saldo em Caixa</h3>
+                            <p class="amount" id="cash-balance">R$ 0,00</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card summary-card">
+                        <div class="card-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Total a Receber</h3>
+                            <p class="amount" id="total-receivables">R$ 0,00</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card summary-card">
+                        <div class="card-icon">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Despesas do Mês</h3>
+                            <p class="amount expense" id="monthly-expenses">R$ 0,00</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card summary-card">
+                        <div class="card-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Vendas do Mês</h3>
+                            <p class="amount" id="monthly-sales">R$ 0,00</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-charts">
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3>Vendas por Método de Pagamento</h3>
+                        </div>
+                        <div class="card-content">
+                            <canvas id="payment-methods-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Alertas</h3>
+                        </div>
+                        <div class="card-content">
+                            <div id="alerts-container">
+                                <p class="no-data">Nenhum alerta no momento</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clients Module -->
+            <div id="clients-module" class="module">
+                <div class="module-header">
+                    <h2><i class="fas fa-users"></i> Clientes</h2>
+                    <button class="btn btn-primary" id="add-client-btn">
+                        <i class="fas fa-plus"></i> Novo Cliente
+                    </button>
+                </div>
+                
+                <div class="card">
+                    <div class="card-content">
+                        <div class="table-responsive">
+                            <table id="clients-table" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Telefone</th>
+                                        <th>Data Cadastro</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory Module -->
+            <div id="inventory-module" class="module">
+                <div class="module-header">
+                    <h2><i class="fas fa-boxes"></i> Estoque</h2>
+                    <button class="btn btn-primary" id="add-product-btn">
+                        <i class="fas fa-plus"></i> Novo Produto
+                    </button>
+                </div>
+                
+                <div class="card">
+                    <div class="card-content">
+                        <div class="table-responsive">
+                            <table id="inventory-table" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Nome</th>
+                                        <th>Quantidade</th>
+                                        <th>Preço Custo</th>
+                                        <th>Preço Venda</th>
+                                        <th>Status</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales Module -->
+            <div id="sales-module" class="module">
+                <div class="module-header">
+                    <h2><i class="fas fa-cash-register"></i> Ponto de Venda (PDV)</h2>
+                </div>
+                
+                <div class="sales-container">
+                    <div class="sales-left">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Cliente</h3>
+                            </div>
+                            <div class="card-content">
+                                <select id="sale-client" class="form-control">
+                                    <option value="">Selecione um cliente</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Produtos</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="product-search">
+                                    <input type="text" id="product-search" placeholder="Buscar produto..." class="form-control">
+                                </div>
+                                <div id="products-list" class="products-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="sales-right">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Carrinho</h3>
+                            </div>
+                            <div class="card-content">
+                                <div id="cart-items" class="cart-items"></div>
+                                <div class="cart-total">
+                                    <strong>Total: <span id="cart-total">R$ 0,00</span></strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Pagamento</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="form-group">
+                                    <label>Método de Pagamento</label>
+                                    <select id="payment-method" class="form-control">
+                                        <option value="cash">À Vista</option>
+                                        <option value="pix">PIX</option>
+                                        <option value="credit">Crediário</option>
+                                        <option value="card">Cartão de Crédito</option>
+                                    </select>
+                                </div>
+                                
+                                <div id="installments-group" class="form-group hidden">
+                                    <label>Número de Parcelas</label>
+                                    <select id="installments" class="form-control">
+                                        <option value="2">2x</option>
+                                        <option value="3">3x</option>
+                                        <option value="4">4x</option>
+                                        <option value="5">5x</option>
+                                        <option value="6">6x</option>
+                                    </select>
+                                </div>
+                                
+                                <button id="finalize-sale-btn" class="btn btn-success btn-block">
+                                    <i class="fas fa-check"></i> Finalizar Venda
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cash Flow Module -->
+            <div id="cashflow-module" class="module">
+                <div class="module-header">
+                    <h2><i class="fas fa-chart-line"></i> Fluxo de Caixa</h2>
+                    <button class="btn btn-primary" id="add-cashflow-btn">
+                        <i class="fas fa-plus"></i> Novo Lançamento
+                    </button>
+                </div>
+                
+                <div class="cashflow-summary">
+                    <div class="card summary-card">
+                        <div class="card-content">
+                            <h3>Saldo Atual</h3>
+                            <p class="amount" id="current-balance">R$ 0,00</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-content">
+                        <div class="table-responsive">
+                            <table id="cashflow-table" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Descrição</th>
+                                        <th>Tipo</th>
+                                        <th>Valor</th>
+                                        <th>Saldo</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expenses Module -->
+            <div id="expenses-module" class="module">
+                <div class="module-header">
+                    <h2><i class="fas fa-receipt"></i> Despesas</h2>
+                    <button class="btn btn-primary" id="add-expense-btn">
+                        <i class="fas fa-plus"></i> Nova Despesa
+                    </button>
+                </div>
+                
+                <div class="card">
+                    <div class="card-content">
+                        <div class="table-responsive">
+                            <table id="expenses-table" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Descrição</th>
+                                        <th>Valor</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Receivables Module -->
+            <div id="receivables-module" class="module">
+                <div class="module-header">
+                    <h2><i class="fas fa-money-bill-wave"></i> Contas a Receber</h2>
+                </div>
+                
+                <div class="card">
+                    <div class="card-content">
+                        <div class="table-responsive">
+                            <table id="receivables-table" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Cliente</th>
+                                        <th>Vencimento</th>
+                                        <th>Valor</th>
+                                        <th>Status</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Module -->
+            <div id="reports-module" class="module">
+                <div class="module-header">
+                    <h2><i class="fas fa-chart-bar"></i> Relatórios</h2>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="tabs">
+                            <button class="tab-btn active" data-tab="sales-report">Vendas</button>
+                            <button class="tab-btn" data-tab="receivables-report">Contas a Receber</button>
+                            <button class="tab-btn" data-tab="profitability-report">Lucratividade</button>
+                            <button class="tab-btn" data-tab="products-report">Produtos Mais Vendidos</button>
+                            <button class="tab-btn" data-tab="inventory-report">Estoque</button>
+                            <button class="tab-btn" data-tab="cashflow-report">Fluxo de Caixa</button>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <div id="reports-content" class="reports-content">
+                            <div class="report-filters">
+                                <div class="form-group">
+                                    <label>Data Inicial</label>
+                                    <input type="date" id="start-date" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label>Data Final</label>
+                                    <input type="date" id="end-date" class="form-control">
+                                </div>
+                                <button id="generate-report-btn" class="btn btn-primary">
+                                    <i class="fas fa-search"></i> Gerar Relatório
+                                </button>
+                            </div>
+                            <div id="report-content" class="report-content"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Module -->
+            <div id="settings-module" class="module">
+                <div class="module-header">
+                    <h2><i class="fas fa-cog"></i> Configurações</h2>
+                </div>
+                
+                <div class="settings-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Backup e Restauração</h3>
+                        </div>
+                        <div class="card-content">
+                            <p>Faça backup dos seus dados ou restaure um backup anterior.</p>
+                            <div class="settings-actions">
+                                <button id="backup-btn" class="btn btn-primary">
+                                    <i class="fas fa-download"></i> Fazer Backup
+                                </button>
+                                <button id="restore-btn" class="btn btn-warning">
+                                    <i class="fas fa-upload"></i> Restaurar Backup
+                                </button>
+                                <input type="file" id="restore-file" accept=".json" style="display: none;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Informações do Sistema</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="system-info">
+                                <p><strong>Versão:</strong> 2.0.0</p>
+                                <p><strong>Última Atualização:</strong> <span id="last-update"></span></p>
+                                <p><strong>Total de Registros:</strong> <span id="total-records"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div id="modal-content" class="modal-content"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/clients.js"></script>
+    <script src="js/inventory.js"></script>
+    <script src="js/sales.js"></script>
+    <script src="js/cashflow.js"></script>
+    <script src="js/expenses.js"></script>
+    <script src="js/receivables.js"></script>
+    <script src="js/reports.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
