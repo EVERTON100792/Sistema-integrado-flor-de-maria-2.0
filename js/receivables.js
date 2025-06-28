@@ -112,7 +112,7 @@ class Receivables {
     // Setup table sorting
     setupTableSorting() {
         const headers = document.querySelectorAll('#receivables-table th');
-        const sortableFields = ['client', 'dueDate', 'amount', 'status'];
+        const sortableFields = ['clientName', 'dueDate', 'amount', 'status'];
         
         headers.forEach((header, index) => {
             if (sortableFields[index]) {
@@ -127,7 +127,15 @@ class Receivables {
 
     // Load receivables
     loadReceivables() {
-        this.receivables = StorageManager.getReceivables();
+        // CORREÇÃO: Adiciona o nome do cliente ao objeto para permitir ordenação
+        const clients = StorageManager.getClients();
+        this.receivables = StorageManager.getReceivables().map(r => {
+            const client = clients.find(c => c.id === r.clientId);
+            return {
+                ...r,
+                clientName: client ? client.name : 'Cliente Excluído'
+            };
+        });
         this.filterReceivables();
     }
 
@@ -155,7 +163,7 @@ class Receivables {
 
                 switch (this.statusFilter) {
                     case 'pending':
-                        return receivable.status === 'pending';
+                        return receivable.status === 'pending' && dueDate >= now;
                     case 'overdue':
                         return receivable.status === 'pending' && dueDate < now;
                     case 'paid':
@@ -229,20 +237,18 @@ class Receivables {
             `;
             return;
         }
-
-        const clients = StorageManager.getClients();
-
+        
         tbody.innerHTML = this.filteredReceivables.map(receivable => {
-            const client = clients.find(c => c.id === receivable.clientId);
-            const clientName = client ? client.name : 'Cliente não encontrado';
+            const client = { id: receivable.clientId, name: receivable.clientName };
             const isOverdue = Utils.isOverdue(receivable.dueDate) && receivable.status === 'pending';
-            const daysUntilDue = Utils.daysBetween(new Date(), receivable.dueDate);
+            const daysBetween = Utils.daysBetween(new Date(), receivable.dueDate);
+            const daysDue = new Date(receivable.dueDate) < new Date() ? -daysBetween : daysBetween;
             
             return `
                 <tr class="receivable-row ${isOverdue ? 'overdue' : ''} ${receivable.status === 'paid' ? 'paid' : ''}">
                     <td>
                         <div class="client-info">
-                            <strong>${Utils.sanitizeHtml(clientName)}</strong>
+                            <strong>${Utils.sanitizeHtml(client.name)}</strong>
                             <br><small class="text-muted">${Utils.sanitizeHtml(receivable.description)}</small>
                         </div>
                     </td>
@@ -250,10 +256,10 @@ class Receivables {
                         <div class="due-date-info">
                             ${Utils.formatDate(receivable.dueDate)}
                             ${receivable.status === 'pending' ? `
-                                <br><small class="${isOverdue ? 'text-danger' : daysUntilDue <= 7 ? 'text-warning' : 'text-muted'}">
-                                    ${isOverdue ? `${Math.abs(daysUntilDue)} dia(s) em atraso` : 
-                                      daysUntilDue === 0 ? 'Vence hoje' :
-                                      daysUntilDue <= 7 ? `Vence em ${daysUntilDue} dia(s)` : ''}
+                                <br><small class="${isOverdue ? 'text-danger' : daysDue <= 7 ? 'text-warning' : 'text-muted'}">
+                                    ${isOverdue ? `${Math.abs(daysDue)} dia(s) em atraso` : 
+                                      daysDue === 0 ? 'Vence hoje' :
+                                      daysDue <= 7 ? `Vence em ${daysDue} dia(s)` : ''}
                                 </small>
                             ` : receivable.paidAt ? `
                                 <br><small class="text-muted">Pago em ${Utils.formatDate(receivable.paidAt)}</small>
@@ -285,7 +291,7 @@ class Receivables {
                                     title="Excluir">
                                 <i class="fas fa-trash"></i>
                             </button>
-                            ${client && client.phone ? `
+                            ${StorageManager.getClientById(client.id)?.phone ? `
                                 <button class="btn btn-icon btn-info" 
                                         onclick="receivables.sendReminder('${receivable.id}')"
                                         title="Enviar Lembrete">
@@ -415,6 +421,8 @@ class Receivables {
 
     // Save receivable
     async saveReceivable(receivableId) {
+        const originalReceivable = this.receivables.find(r => r.id === receivableId);
+
         const formData = {
             clientId: document.getElementById('receivable-client').value,
             amount: parseFloat(document.getElementById('receivable-amount').value) || 0,
@@ -449,13 +457,18 @@ class Receivables {
 
         try {
             const receivableData = {
-                ...formData,
-                id: receivableId
+                ...originalReceivable,
+                ...formData
             };
 
             const success = StorageManager.saveReceivable(receivableData);
 
             if (success) {
+                // If status changed to paid, trigger the payment logic
+                if (originalReceivable.status === 'pending' && formData.status === 'paid') {
+                    StorageManager.markReceivableAsPaid(receivableId);
+                }
+                
                 app.closeModal();
                 this.refresh();
                 Notifications.success('Conta atualizada com sucesso!');
@@ -504,8 +517,7 @@ class Receivables {
         const receivable = this.receivables.find(r => r.id === receivableId);
         if (!receivable) return;
 
-        const clients = StorageManager.getClients();
-        const client = clients.find(c => c.id === receivable.clientId);
+        const client = StorageManager.getClientById(receivable.clientId);
         
         if (!client || !client.phone) {
             Notifications.error('Cliente não possui telefone cadastrado');
@@ -513,15 +525,15 @@ class Receivables {
         }
 
         const isOverdue = Utils.isOverdue(receivable.dueDate);
-        const daysUntilDue = Utils.daysBetween(new Date(), receivable.dueDate);
+        const daysDue = Utils.daysBetween(new Date(), new Date(receivable.dueDate));
         
         let message = `🌸 *Flor de Maria* 🌸\n\n`;
         message += `Olá ${client.name}!\n\n`;
         
         if (isOverdue) {
-            message += `⚠️ Lembrete: Sua conta está vencida há ${Math.abs(daysUntilDue)} dia(s).\n\n`;
-        } else if (daysUntilDue <= 3) {
-            message += `📅 Lembrete: Sua conta vence ${daysUntilDue === 0 ? 'hoje' : `em ${daysUntilDue} dia(s)`}.\n\n`;
+            message += `⚠️ Lembrete: Sua conta está vencida há ${daysDue} dia(s).\n\n`;
+        } else if (daysDue <= 3) {
+            message += `📅 Lembrete: Sua conta vence ${daysDue === 0 ? 'hoje' : `em ${daysDue} dia(s)`}.\n\n`;
         } else {
             message += `📋 Lembrete sobre sua conta:\n\n`;
         }
