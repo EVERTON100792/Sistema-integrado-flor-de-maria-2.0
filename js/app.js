@@ -435,4 +435,3 @@ if ('serviceWorker' in navigator) {
 
 // Export app instance
 window.App = App;
-
