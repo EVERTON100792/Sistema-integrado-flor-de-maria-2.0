@@ -1,12 +1,11 @@
 // Storage Management System
 class StorageManager {
     constructor() {
-        this.storageKey = 'flordemaria_sgi';
+        this.storageKey = 'flordemaria_sgi_v2';
         this.version = '2.0.0';
         this.init();
     }
 
-    // Initialize storage structure
     init() {
         const data = this.getAllData();
         if (!data.version || data.version !== this.version) {
@@ -14,7 +13,6 @@ class StorageManager {
         }
     }
 
-    // Get all data from localStorage
     getAllData() {
         try {
             const data = localStorage.getItem(this.storageKey);
@@ -25,7 +23,6 @@ class StorageManager {
         }
     }
 
-    // Save all data to localStorage
     saveAllData(data) {
         try {
             data.version = this.version;
@@ -34,11 +31,11 @@ class StorageManager {
             return true;
         } catch (error) {
             console.error('Error saving to storage:', error);
+            Notifications.error('Erro ao salvar dados. O armazenamento pode estar cheio.');
             return false;
         }
     }
 
-    // Get default data structure
     getDefaultStructure() {
         return {
             version: this.version,
@@ -55,17 +52,16 @@ class StorageManager {
                 ownerName: 'Maria',
                 phone: '',
                 address: '',
-                defaultInterestRate: 0,
                 lowStockAlert: 5,
-                currency: 'BRL'
+                currency: 'BRL',
+                autoBackup: false,
+                showTips: true
             }
         };
     }
 
-    // Migrate data from older versions
     migrateData(oldData) {
         const newData = this.getDefaultStructure();
-        
         // Preserve existing data if available
         if (oldData.clients) newData.clients = oldData.clients;
         if (oldData.products) newData.products = oldData.products;
@@ -76,29 +72,29 @@ class StorageManager {
         if (oldData.settings) {
             newData.settings = { ...newData.settings, ...oldData.settings };
         }
-
         this.saveAllData(newData);
         console.log('Data migrated to version', this.version);
     }
+    
+    // Generic Getters
+    getClients() { return this.getAllData().clients || []; }
+    getProducts() { return this.getAllData().products || []; }
+    getSales() { return this.getAllData().sales || []; }
+    getCashFlow() { return this.getAllData().cashFlow || []; }
+    getExpenses() { return this.getAllData().expenses || []; }
+    getReceivables() { return this.getAllData().receivables || []; }
+    getSettings() { return this.getAllData().settings || {}; }
 
-    // Client operations
-    getClients() {
-        return this.getAllData().clients || [];
-    }
-
+    // Client Operations
     saveClient(client) {
         const data = this.getAllData();
         if (client.id) {
-            // Update existing client
             const index = data.clients.findIndex(c => c.id === client.id);
-            if (index !== -1) {
-                data.clients[index] = { ...client, updatedAt: new Date().toISOString() };
-            }
+            if (index > -1) data.clients[index] = { ...data.clients[index], ...client, updatedAt: new Date().toISOString() };
         } else {
-            // Add new client
             client.id = Utils.generateId();
             client.createdAt = new Date().toISOString();
-            client.updatedAt = new Date().toISOString();
+            client.updatedAt = client.createdAt;
             data.clients.push(client);
         }
         return this.saveAllData(data);
@@ -111,28 +107,19 @@ class StorageManager {
     }
 
     getClientById(clientId) {
-        const clients = this.getClients();
-        return clients.find(c => c.id === clientId);
+        return this.getClients().find(c => c.id === clientId);
     }
 
-    // Product operations
-    getProducts() {
-        return this.getAllData().products || [];
-    }
-
+    // Product Operations
     saveProduct(product) {
         const data = this.getAllData();
         if (product.id) {
-            // Update existing product
             const index = data.products.findIndex(p => p.id === product.id);
-            if (index !== -1) {
-                data.products[index] = { ...product, updatedAt: new Date().toISOString() };
-            }
+            if (index > -1) data.products[index] = { ...data.products[index], ...product, updatedAt: new Date().toISOString() };
         } else {
-            // Add new product
             product.id = Utils.generateId();
             product.createdAt = new Date().toISOString();
-            product.updatedAt = new Date().toISOString();
+            product.updatedAt = product.createdAt;
             data.products.push(product);
         }
         return this.saveAllData(data);
@@ -143,315 +130,187 @@ class StorageManager {
         data.products = data.products.filter(p => p.id !== productId);
         return this.saveAllData(data);
     }
-
-    getProductById(productId) {
-        const products = this.getProducts();
-        return products.find(p => p.id === productId);
-    }
-
-    updateProductStock(productId, quantity) {
+    
+    updateProductStock(productId, quantityChange) {
         const data = this.getAllData();
         const productIndex = data.products.findIndex(p => p.id === productId);
         if (productIndex !== -1) {
-            data.products[productIndex].quantity += quantity;
+            data.products[productIndex].quantity += quantityChange;
             data.products[productIndex].updatedAt = new Date().toISOString();
             return this.saveAllData(data);
         }
         return false;
     }
 
-    // Sales operations
-    getSales() {
-        return this.getAllData().sales || [];
-    }
-
+    // Sale Operations
     saveSale(sale) {
         const data = this.getAllData();
         sale.id = Utils.generateId();
         sale.createdAt = new Date().toISOString();
-        
-        // Update product stock
+
+        // Update product stock from the main data object
         sale.items.forEach(item => {
-            this.updateProductStock(item.productId, -item.quantity);
+            const productIndex = data.products.findIndex(p => p.id === item.productId);
+            if (productIndex !== -1) {
+                data.products[productIndex].quantity -= item.quantity;
+                data.products[productIndex].updatedAt = new Date().toISOString();
+            }
         });
 
-        // Add to cash flow if payment is immediate
         if (sale.paymentMethod === 'cash' || sale.paymentMethod === 'pix') {
-            const cashEntry = {
-                id: Utils.generateId(),
-                description: `Venda #${sale.id.substr(-6)}`,
-                type: 'income',
-                amount: sale.total,
-                date: sale.createdAt,
-                category: 'sales',
-                saleId: sale.id,
-                createdAt: new Date().toISOString()
-            };
-            data.cashFlow.push(cashEntry);
+            data.cashFlow.push({
+                id: Utils.generateId(), description: `Venda #${sale.id.substr(-6)}`,
+                type: 'income', amount: sale.total, date: sale.createdAt,
+                category: 'sales', saleId: sale.id, createdAt: new Date().toISOString()
+            });
         }
-
-        // Create receivables for installment payments
-        if ((sale.paymentMethod === 'credit' || sale.paymentMethod === 'card') && sale.installments > 1) {
-            const installmentValue = sale.total / sale.installments;
-            for (let i = 1; i <= sale.installments; i++) {
-                const dueDate = new Date();
-                dueDate.setMonth(dueDate.getMonth() + i);
-                
-                const receivable = {
-                    id: Utils.generateId(),
-                    clientId: sale.clientId,
-                    saleId: sale.id,
-                    description: `Parcela ${i}/${sale.installments} - Venda #${sale.id.substr(-6)}`,
-                    amount: installmentValue,
-                    dueDate: dueDate.toISOString(),
-                    status: 'pending',
-                    createdAt: new Date().toISOString()
-                };
-                data.receivables.push(receivable);
-            }
-        }
+        
+        if ((sale.paymentMethod === 'credit' || sale.paymentMethod === 'card') && sale.installments >= 1) {
+             const installmentValue = sale.total / sale.installments;
+             for (let i = 1; i <= sale.installments; i++) {
+                 const dueDate = new Date(sale.createdAt);
+                 dueDate.setMonth(dueDate.getMonth() + i);
+                 data.receivables.push({
+                     id: Utils.generateId(), clientId: sale.clientId, saleId: sale.id,
+                     description: `Parcela ${i}/${sale.installments} - Venda #${sale.id.substr(-6)}`,
+                     amount: installmentValue, dueDate: dueDate.toISOString(),
+                     status: 'pending', createdAt: new Date().toISOString()
+                 });
+             }
+         }
 
         data.sales.push(sale);
         return this.saveAllData(data);
     }
 
-    getSaleById(saleId) {
-        const sales = this.getSales();
-        return sales.find(s => s.id === saleId);
-    }
-
-    // Cash Flow operations
-    getCashFlow() {
-        return this.getAllData().cashFlow || [];
-    }
-
-    saveCashFlow(entry) {
-        const data = this.getAllData();
-        if (entry.id) {
-            // Update existing entry
-            const index = data.cashFlow.findIndex(c => c.id === entry.id);
-            if (index !== -1) {
-                data.cashFlow[index] = { ...entry, updatedAt: new Date().toISOString() };
-            }
-        } else {
-            // Add new entry
-            entry.id = Utils.generateId();
-            entry.createdAt = new Date().toISOString();
-            data.cashFlow.push(entry);
-        }
-        return this.saveAllData(data);
-    }
-
-    deleteCashFlow(entryId) {
-        const data = this.getAllData();
-        data.cashFlow = data.cashFlow.filter(c => c.id !== entryId);
-        return this.saveAllData(data);
-    }
-
-    getCurrentBalance() {
-        const cashFlow = this.getCashFlow();
-        return cashFlow.reduce((balance, entry) => {
-            return entry.type === 'income' ? balance + entry.amount : balance - entry.amount;
-        }, 0);
-    }
-
-    // Expenses operations
-    getExpenses() {
-        return this.getAllData().expenses || [];
-    }
-
-    saveExpense(expense) {
-        const data = this.getAllData();
-        if (expense.id) {
-            // Update existing expense
-            const index = data.expenses.findIndex(e => e.id === expense.id);
-            if (index !== -1) {
-                data.expenses[index] = { ...expense, updatedAt: new Date().toISOString() };
-                
-                // Update corresponding cash flow entry
-                const cashFlowIndex = data.cashFlow.findIndex(c => c.expenseId === expense.id);
-                if (cashFlowIndex !== -1) {
-                    data.cashFlow[cashFlowIndex].description = expense.description;
-                    data.cashFlow[cashFlowIndex].amount = expense.amount;
-                    data.cashFlow[cashFlowIndex].date = expense.date;
-                }
-            }
-        } else {
-            // Add new expense
-            expense.id = Utils.generateId();
-            expense.createdAt = new Date().toISOString();
-            data.expenses.push(expense);
-            
-            // Add to cash flow
-            const cashEntry = {
-                id: Utils.generateId(),
-                description: expense.description,
-                type: 'expense',
-                amount: expense.amount,
-                date: expense.date,
-                category: 'expenses',
-                expenseId: expense.id,
-                createdAt: new Date().toISOString()
-            };
-            data.cashFlow.push(cashEntry);
-        }
-        return this.saveAllData(data);
-    }
-
-    deleteExpense(expenseId) {
-        const data = this.getAllData();
-        data.expenses = data.expenses.filter(e => e.id !== expenseId);
-        // Also remove from cash flow
-        data.cashFlow = data.cashFlow.filter(c => c.expenseId !== expenseId);
-        return this.saveAllData(data);
-    }
-
-    // Receivables operations
-    getReceivables() {
-        return this.getAllData().receivables || [];
-    }
-
-    saveReceivable(receivable) {
-        const data = this.getAllData();
-        if (receivable.id) {
-            // Update existing receivable
-            const index = data.receivables.findIndex(r => r.id === receivable.id);
-            if (index !== -1) {
-                data.receivables[index] = { ...receivable, updatedAt: new Date().toISOString() };
-            }
-        } else {
-            // Add new receivable
-            receivable.id = Utils.generateId();
-            receivable.createdAt = new Date().toISOString();
-            data.receivables.push(receivable);
-        }
-        return this.saveAllData(data);
-    }
-
-    deleteReceivable(receivableId) {
-        const data = this.getAllData();
-        data.receivables = data.receivables.filter(r => r.id !== receivableId);
-        return this.saveAllData(data);
-    }
-
-    markReceivableAsPaid(receivableId) {
-        const data = this.getAllData();
-        const receivableIndex = data.receivables.findIndex(r => r.id === receivableId);
-        if (receivableIndex !== -1) {
-            const receivable = data.receivables[receivableIndex];
-            receivable.status = 'paid';
-            receivable.paidAt = new Date().toISOString();
-            
-            // Add to cash flow
-            const cashEntry = {
-                id: Utils.generateId(),
-                description: receivable.description,
-                type: 'income',
-                amount: receivable.amount,
-                date: new Date().toISOString(),
-                category: 'receivables',
-                receivableId: receivableId,
-                createdAt: new Date().toISOString()
-            };
-            data.cashFlow.push(cashEntry);
-            
-            return this.saveAllData(data);
-        }
-        return false;
-    }
-
-    // Settings operations
-    getSettings() {
-        return this.getAllData().settings || {};
-    }
-
+    // Other Operations
     saveSettings(settings) {
         const data = this.getAllData();
         data.settings = { ...data.settings, ...settings };
         return this.saveAllData(data);
     }
 
-    // Backup and restore
-    exportBackup() {
+    saveExpense(expense) {
         const data = this.getAllData();
-        const backup = {
-            ...data,
-            exportedAt: new Date().toISOString(),
-            exportedBy: 'Flor de Maria SGI v' + this.version
-        };
-        return JSON.stringify(backup, null, 2);
+        if (expense.id) {
+            const index = data.expenses.findIndex(e => e.id === expense.id);
+            if(index > -1) {
+                 data.expenses[index] = {...data.expenses[index], ...expense, updatedAt: new Date().toISOString()};
+                 const cashFlowIndex = data.cashFlow.findIndex(c => c.expenseId === expense.id);
+                 if (cashFlowIndex > -1) {
+                     data.cashFlow[cashFlowIndex].description = expense.description;
+                     data.cashFlow[cashFlowIndex].amount = expense.amount;
+                     data.cashFlow[cashFlowIndex].date = expense.date;
+                 }
+            }
+        } else {
+            expense.id = Utils.generateId();
+            expense.createdAt = new Date().toISOString();
+            data.expenses.push(expense);
+            data.cashFlow.push({
+                id: Utils.generateId(), description: expense.description, type: 'expense',
+                amount: expense.amount, date: expense.date, category: 'expenses',
+                expenseId: expense.id, createdAt: new Date().toISOString()
+            });
+        }
+        return this.saveAllData(data);
+    }
+    
+    deleteExpense(expenseId) {
+        const data = this.getAllData();
+        data.expenses = data.expenses.filter(e => e.id !== expenseId);
+        data.cashFlow = data.cashFlow.filter(c => c.expenseId !== expenseId);
+        return this.saveAllData(data);
     }
 
-    importBackup(backupData) {
+    markReceivableAsPaid(receivableId) {
+        const data = this.getAllData();
+        const index = data.receivables.findIndex(r => r.id === receivableId);
+        if (index > -1) {
+            data.receivables[index].status = 'paid';
+            data.receivables[index].paidAt = new Date().toISOString();
+            data.cashFlow.push({
+                id: Utils.generateId(), description: data.receivables[index].description,
+                type: 'income', amount: data.receivables[index].amount, date: new Date().toISOString(),
+                category: 'receivables', receivableId, createdAt: new Date().toISOString()
+            });
+            return this.saveAllData(data);
+        }
+        return false;
+    }
+
+    saveReceivable(receivable) {
+        const data = this.getAllData();
+        if (receivable.id) {
+            const index = data.receivables.findIndex(r => r.id === receivable.id);
+            if(index > -1) data.receivables[index] = {...data.receivables[index], ...receivable, updatedAt: new Date().toISOString()};
+        } else {
+            receivable.id = Utils.generateId();
+            receivable.createdAt = new Date().toISOString();
+            data.receivables.push(receivable);
+        }
+        return this.saveAllData(data);
+    }
+    
+    deleteReceivable(receivableId){
+        const data = this.getAllData();
+        data.receivables = data.receivables.filter(r => r.id !== receivableId);
+        return this.saveAllData(data);
+    }
+    
+    // Backup and Restore
+    exportBackup() {
+        const data = this.getAllData();
+        return JSON.stringify({...data, exportedAt: new Date().toISOString(), exportedBy: `SGI v${this.version}`}, null, 2);
+    }
+
+    importBackup(backupDataString) {
         try {
-            const data = JSON.parse(backupData);
-            
-            // Validate backup structure
-            if (!data.version) {
-                throw new Error('Arquivo de backup inválido');
-            }
-            
-            // Clear current data and import backup
-            localStorage.removeItem(this.storageKey);
+            const data = JSON.parse(backupDataString);
+            if (!data.version) throw new Error('Arquivo de backup inválido.');
             this.saveAllData(data);
-            
             return true;
-        } catch (error) {
+        } catch(error) {
             console.error('Error importing backup:', error);
             return false;
         }
     }
 
-    // Statistics and reports
+    getStorageSize() {
+        return new Blob([JSON.stringify(localStorage)]).size;
+    }
+    
     getStatistics() {
         const data = this.getAllData();
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
-        
-        // Filter current month data
-        const currentMonthSales = data.sales.filter(sale => {
-            const saleDate = new Date(sale.createdAt);
+
+        const currentMonthSales = data.sales.filter(s => {
+            const saleDate = new Date(s.createdAt);
             return saleDate.getMonth() === currentMonth && saleDate.getFullYear() === currentYear;
         });
-        
-        const currentMonthExpenses = data.expenses.filter(expense => {
-            const expenseDate = new Date(expense.date);
+        const currentMonthExpenses = data.expenses.filter(e => {
+            const expenseDate = new Date(e.date);
             return expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
         });
-        
-        const overdueReceivables = data.receivables.filter(r => 
-            r.status === 'pending' && Utils.isOverdue(r.dueDate)
-        );
-        
+
+        const overdueReceivables = data.receivables.filter(r => r.status === 'pending' && Utils.isOverdue(r.dueDate));
+        const lowStockThreshold = data.settings.lowStockAlert || 5;
+
         return {
             totalClients: data.clients.length,
             totalProducts: data.products.length,
             totalSales: data.sales.length,
-            currentBalance: this.getCurrentBalance(),
+            currentBalance: data.cashFlow.reduce((bal, entry) => entry.type === 'income' ? bal + entry.amount : bal - entry.amount, 0),
             monthlyRevenue: currentMonthSales.reduce((sum, sale) => sum + sale.total, 0),
-            monthlyExpenses: currentMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0),
-            totalReceivables: data.receivables
-                .filter(r => r.status === 'pending')
-                .reduce((sum, r) => sum + r.amount, 0),
+            monthlyExpenses: currentMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0),
+            totalReceivables: data.receivables.filter(r => r.status === 'pending').reduce((sum, r) => sum + r.amount, 0),
             overdueReceivables: overdueReceivables.length,
-            lowStockProducts: data.products.filter(p => p.quantity <= (data.settings.lowStockAlert || 5)).length
+            lowStockProducts: data.products.filter(p => p.quantity > 0 && p.quantity <= lowStockThreshold).length
         };
-    }
-
-    // Clear all data (for testing purposes)
-    clearAllData() {
-        localStorage.removeItem(this.storageKey);
-        this.init();
-        return true;
-    }
-
-    // Get storage size
-    getStorageSize() {
-        const data = localStorage.getItem(this.storageKey);
-        return data ? new Blob([data]).size : 0;
     }
 }
 
-// Initialize storage manager
+// Make a single instance available globally
 window.StorageManager = new StorageManager();
