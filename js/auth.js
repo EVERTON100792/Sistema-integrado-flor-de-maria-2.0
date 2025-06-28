@@ -461,4 +461,3 @@ document.head.appendChild(authStyles);
 
 // Initialize authentication
 window.Auth = new Auth();
-
