@@ -151,12 +151,17 @@ class App {
             settings: new Settings()
         };
 
-        // Initialize each module
-        Object.values(this.modules).forEach(module => {
-            if (module.init) {
-                module.init();
+        // CORREÇÃO: Itera sobre os módulos, inicializa e os torna globais para que os botões 'onclick' funcionem.
+        for (const moduleName in this.modules) {
+            const moduleInstance = this.modules[moduleName];
+            
+            // Torna a instância do módulo global (ex: window.clients = new Clients())
+            window[moduleName] = moduleInstance;
+            
+            if (moduleInstance.init) {
+                moduleInstance.init();
             }
-        });
+        }
     }
 
     // Show specific module
