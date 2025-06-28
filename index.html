@@ -5,22 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flor de Maria - Sistema de Gestão Integrado</title>
     
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Custom Styles -->
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="styles/login.css">
     <link rel="stylesheet" href="styles/components.css">
 </head>
 <body>
-    <!-- Notification Container -->
     <div id="notification-container"></div>
 
-    <!-- Login Screen -->
     <div id="login-screen" class="login-container">
         <div class="login-background">
             <div class="floating-shapes">
@@ -63,9 +58,7 @@
         </div>
     </div>
 
-    <!-- Main Application -->
     <div id="main-app" class="main-app hidden">
-        <!-- Header -->
         <header class="header">
             <div class="header-left">
                 <button id="sidebar-toggle" class="sidebar-toggle">
@@ -87,7 +80,6 @@
             </div>
         </header>
 
-        <!-- Sidebar -->
         <nav id="sidebar" class="sidebar">
             <ul class="nav-menu">
                 <li class="nav-item active" data-module="dashboard">
@@ -147,9 +139,7 @@
             </ul>
         </nav>
 
-        <!-- Main Content -->
         <main class="main-content">
-            <!-- Dashboard Module -->
             <div id="dashboard-module" class="module active">
                 <div class="module-header">
                     <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
@@ -220,7 +210,6 @@
                 </div>
             </div>
 
-            <!-- Clients Module -->
             <div id="clients-module" class="module">
                 <div class="module-header">
                     <h2><i class="fas fa-users"></i> Clientes</h2>
@@ -235,9 +224,9 @@
                             <table id="clients-table" class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Nome</th>
-                                        <th>Telefone</th>
-                                        <th>Data Cadastro</th>
+                                        <th data-sort="name">Nome</th>
+                                        <th data-sort="phone">Telefone</th>
+                                        <th data-sort="createdAt">Data Cadastro</th>
                                         <th>Ações</th>
                                     </tr>
                                 </thead>
@@ -248,7 +237,6 @@
                 </div>
             </div>
 
-            <!-- Inventory Module -->
             <div id="inventory-module" class="module">
                 <div class="module-header">
                     <h2><i class="fas fa-boxes"></i> Estoque</h2>
@@ -263,11 +251,11 @@
                             <table id="inventory-table" class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Código</th>
-                                        <th>Nome</th>
-                                        <th>Quantidade</th>
-                                        <th>Preço Custo</th>
-                                        <th>Preço Venda</th>
+                                        <th data-sort="code">Código</th>
+                                        <th data-sort="name">Nome</th>
+                                        <th data-sort="quantity">Quantidade</th>
+                                        <th data-sort="costPrice">Preço Custo</th>
+                                        <th data-sort="salePrice">Preço Venda</th>
                                         <th>Status</th>
                                         <th>Ações</th>
                                     </tr>
@@ -279,7 +267,6 @@
                 </div>
             </div>
 
-            <!-- Sales Module -->
             <div id="sales-module" class="module">
                 <div class="module-header">
                     <h2><i class="fas fa-cash-register"></i> Ponto de Venda (PDV)</h2>
@@ -359,7 +346,6 @@
                 </div>
             </div>
 
-            <!-- Cash Flow Module -->
             <div id="cashflow-module" class="module">
                 <div class="module-header">
                     <h2><i class="fas fa-chart-line"></i> Fluxo de Caixa</h2>
@@ -383,10 +369,10 @@
                             <table id="cashflow-table" class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Data</th>
-                                        <th>Descrição</th>
-                                        <th>Tipo</th>
-                                        <th>Valor</th>
+                                        <th data-sort="date">Data</th>
+                                        <th data-sort="description">Descrição</th>
+                                        <th data-sort="type">Tipo</th>
+                                        <th data-sort="amount">Valor</th>
                                         <th>Saldo</th>
                                         <th>Ações</th>
                                     </tr>
@@ -398,7 +384,6 @@
                 </div>
             </div>
 
-            <!-- Expenses Module -->
             <div id="expenses-module" class="module">
                 <div class="module-header">
                     <h2><i class="fas fa-receipt"></i> Despesas</h2>
@@ -413,9 +398,9 @@
                             <table id="expenses-table" class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Data</th>
-                                        <th>Descrição</th>
-                                        <th>Valor</th>
+                                        <th data-sort="date">Data</th>
+                                        <th data-sort="description">Descrição</th>
+                                        <th data-sort="amount">Valor</th>
                                         <th>Ações</th>
                                     </tr>
                                 </thead>
@@ -426,7 +411,6 @@
                 </div>
             </div>
 
-            <!-- Receivables Module -->
             <div id="receivables-module" class="module">
                 <div class="module-header">
                     <h2><i class="fas fa-money-bill-wave"></i> Contas a Receber</h2>
@@ -438,10 +422,10 @@
                             <table id="receivables-table" class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Cliente</th>
-                                        <th>Vencimento</th>
-                                        <th>Valor</th>
-                                        <th>Status</th>
+                                        <th data-sort="clientName">Cliente</th>
+                                        <th data-sort="dueDate">Vencimento</th>
+                                        <th data-sort="amount">Valor</th>
+                                        <th data-sort="status">Status</th>
                                         <th>Ações</th>
                                     </tr>
                                 </thead>
@@ -452,7 +436,6 @@
                 </div>
             </div>
 
-            <!-- Reports Module -->
             <div id="reports-module" class="module">
                 <div class="module-header">
                     <h2><i class="fas fa-chart-bar"></i> Relatórios</h2>
@@ -490,7 +473,6 @@
                 </div>
             </div>
 
-            <!-- Settings Module -->
             <div id="settings-module" class="module">
                 <div class="module-header">
                     <h2><i class="fas fa-cog"></i> Configurações</h2>
@@ -532,12 +514,10 @@
         </main>
     </div>
 
-    <!-- Modals -->
     <div id="modal-overlay" class="modal-overlay hidden">
         <div id="modal-content" class="modal-content"></div>
     </div>
 
-    <!-- Scripts -->
     <script src="js/utils.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/notifications.js"></script>
